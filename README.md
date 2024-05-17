@@ -2,6 +2,8 @@
 
 _Ah yes. Yet another one of those.._
 
+![image](https://github.com/Malien/usd-rates-emailer/assets/7205038/3bee37a7-18b3-40ed-a094-d7a08929d023)
+
 ### Startup
 
 Plain and simple: `go run ./cmd/server`
