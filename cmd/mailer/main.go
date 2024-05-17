@@ -1,9 +1,6 @@
 package main
 
-import (
-	"github.com/malien/usd-rates-emailer/ratesmail"
-	_ "github.com/mattn/go-sqlite3"
-)
+import "github.com/malien/usd-rates-emailer/ratesmail"
 
 func must(err error) {
 	if err != nil {
@@ -15,14 +12,18 @@ func main() {
 	config, err := ratesmail.ParseConfig()
 	must(err)
 
+	mailer, err := ratesmail.NewSmtpMailer(config.Email)
+	must(err)
+    defer mailer.Close()
+
 	db, err := ratesmail.OpenDB(config.DB)
 	must(err)
-	defer db.Close()
+    defer db.Close()
 
-	err = ratesmail.Bootstrap(ratesmail.BootstrapOptions{
+	err = ratesmail.PublishMailingList(ratesmail.PublishMailingListOpts{
 		DB:                 db,
 		RateFetcher:        ratesmail.FetchExchangeRateAPIOpenRates,
-		Config:             config.Server,
+		Mailer:             mailer,
 		ExchangeRateConfig: config.ExchangeRates,
 	})
 	must(err)

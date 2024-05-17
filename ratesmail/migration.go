@@ -1,4 +1,4 @@
-package common
+package ratesmail
 
 import (
 	"database/sql"

@@ -1,4 +1,4 @@
-package common
+package ratesmail
 
 import (
 	"fmt"
@@ -28,10 +28,16 @@ type DBConfig struct {
 	WALMode  bool `mapstructure:"wal_mode"`
 }
 
+type ExchangeRateConfig struct {
+	From string
+	To   string
+}
+
 type ApplicationConfig struct {
-	DB     DBConfig
-	Server ServerConfig
-	Email  EmailConfig
+	DB            DBConfig
+	Server        ServerConfig
+	Email         EmailConfig
+	ExchangeRates ExchangeRateConfig `mapstructure:"exchange_rates"`
 }
 
 func ParseConfig() (ApplicationConfig, error) {

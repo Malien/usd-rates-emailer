@@ -1,7 +1,11 @@
 [db]
-filename = ":memory:"
+filename = "dev.sqlite"
 wal_mode = false
 
 [server]
 port = 8080
 bind_address = "127.0.0.1"
+
+[exchange_rates]
+from = "USD"
+to = "UAH"

@@ -1,4 +1,4 @@
-package subserver
+package ratesmail
 
 import (
 	"context"
@@ -11,15 +11,15 @@ import (
 	"net/mail"
 	"time"
 
-	"github.com/malien/usd-rates-emailer/common"
 	nanoid "github.com/matoous/go-nanoid/v2"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type BootstrapOptions struct {
-	DB          *sql.DB
-	RateFetcher RateFetcher
-	Config      common.ServerConfig
+	*sql.DB
+	RateFetcher
+	Config ServerConfig
+	ExchangeRateConfig
 }
 
 func Bootstrap(opts BootstrapOptions) error {
@@ -34,7 +34,7 @@ func Bootstrap(opts BootstrapOptions) error {
 		return insertSubscriber(db, w, r)
 	})
 	handleTracedFunc(mux, "/rate", func(w http.ResponseWriter, r *http.Request) error {
-		return fetchRates(opts.RateFetcher, w, r)
+		return fetchRates(opts.RateFetcher, opts.ExchangeRateConfig, w, r)
 	})
 
 	sock, err := net.Listen("tcp", fmt.Sprintf("%s:%d", opts.Config.BindAddress, opts.Config.Port))
@@ -117,9 +117,7 @@ func insertSubscriber(db *sql.DB, w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-type RateFetcher func(context.Context, string, string) (float64, error)
-
-func fetchRates(fetchRates RateFetcher, w http.ResponseWriter, r *http.Request) error {
+func fetchRates(fetchRates RateFetcher, conf ExchangeRateConfig, w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodGet {
@@ -127,7 +125,7 @@ func fetchRates(fetchRates RateFetcher, w http.ResponseWriter, r *http.Request) 
 		return fmt.Errorf("Method not allowed")
 	}
 
-	rate, err := fetchRates(r.Context(), "USD", "UAH")
+	rate, err := fetchRates(r.Context(), conf.From, conf.To)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return fmt.Errorf("Error fetching rate: %w", err)
@@ -135,39 +133,6 @@ func fetchRates(fetchRates RateFetcher, w http.ResponseWriter, r *http.Request) 
 
 	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(rate)
-}
-
-type exchangeRateAPIResponse struct {
-	Rates map[string]float64 `json:"rates"`
-}
-
-func FetchExchangeRateAPIOpenRates(ctx context.Context, from string, to string) (float64, error) {
-	requestId := requestId(ctx)
-
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://open.er-api.com/v6/latest/"+from, nil)
-	if err != nil {
-		return 0, err
-	}
-	request.Header.Set("Accept", "application/json")
-	response, err := http.DefaultClient.Do(request)
-	if err != nil {
-		return 0, err
-	}
-	defer response.Body.Close()
-
-	var apiResponse exchangeRateAPIResponse
-	err = json.NewDecoder(response.Body).Decode(&apiResponse)
-	if err != nil {
-		return 0, err
-	}
-
-	rate, ok := apiResponse.Rates[to]
-	if !ok {
-		return 0, fmt.Errorf("Conversion rate from %s to %s not found", from, to)
-	}
-
-	log.Printf("[request=%s] Rate fetched from %s to %s: %f", requestId, from, to, rate)
-	return rate, nil
 }
 
 func must(err error) {
@@ -181,7 +146,8 @@ type requestIdKey struct{}
 var requestIdContextKey = requestIdKey{}
 
 func requestId(ctx context.Context) string {
-	return ctx.Value(requestIdContextKey).(string)
+    value, _ := ctx.Value(requestIdContextKey).(string)
+    return value
 }
 
 type statusTracedResponseWriter struct {
