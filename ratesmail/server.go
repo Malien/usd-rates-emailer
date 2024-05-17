@@ -113,6 +113,7 @@ func insertSubscriber(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	}
 
 	tx, err := db.Begin()
+    defer tx.Rollback()
 	if err != nil {
 		log.Printf("[request=%s] Error starting transaction: %s", requestId, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -136,9 +137,8 @@ func insertSubscriber(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = tx.Exec("insert into subscribers (email) values (?)", email)
+    _, err = tx.Exec("insert into subscribers (email) values (?)", email)
 	if err != nil {
-		_ = tx.Rollback()
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Printf("[request=%s] Error inserting subscriber: %s", requestId, err)
 		writeError(w, "Internal server error")

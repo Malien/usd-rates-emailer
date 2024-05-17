@@ -44,7 +44,7 @@ func PublishMailingList(opts PublishMailingListOpts) error {
 		emails = append(emails, email)
 	}
 
-	body := fmt.Sprintf("The toda's exchange rate is %f", rate)
+	body := fmt.Sprintf("The today's exchange rate is %.2f", rate)
 	subject := fmt.Sprintf("Your daily %s to %s exchange rate newsletter", opts.ExchangeRateConfig.From, opts.ExchangeRateConfig.To)
 	err = opts.Mailer.Send(context.Background(), emails, subject, body)
 	if err != nil {
