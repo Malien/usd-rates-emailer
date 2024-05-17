@@ -25,13 +25,13 @@ func Bootstrap(opts BootstrapOptions) http.Handler {
 	db := opts.DB
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	handleTracedFunc(mux, "/subscribe", func(w http.ResponseWriter, r *http.Request) {
+	handleTracedFunc(mux, "POST /subscribe", func(w http.ResponseWriter, r *http.Request) {
 		insertSubscriber(db, w, r)
 	})
-	handleTracedFunc(mux, "/rate", func(w http.ResponseWriter, r *http.Request) {
+	handleTracedFunc(mux, "GET /rate", func(w http.ResponseWriter, r *http.Request) {
 		fetchRates(opts.RateFetcher, opts.ExchangeRateConfig, w, r)
 	})
 
@@ -82,12 +82,6 @@ func insertSubscriber(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	requestId := requestId(r.Context())
 	w.Header().Set("Content-Type", "application/json")
 
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		writeError(w, "Method not allowed")
-		return
-	}
-
 	email := r.FormValue("email")
 	if email == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -113,7 +107,7 @@ func insertSubscriber(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	}
 
 	tx, err := db.Begin()
-    defer tx.Rollback()
+	defer tx.Rollback()
 	if err != nil {
 		log.Printf("[request=%s] Error starting transaction: %s", requestId, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -137,7 +131,7 @@ func insertSubscriber(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-    _, err = tx.Exec("insert into subscribers (email) values (?)", email)
+	_, err = tx.Exec("insert into subscribers (email) values (?)", email)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Printf("[request=%s] Error inserting subscriber: %s", requestId, err)
@@ -163,12 +157,6 @@ func fetchRates(
 	r *http.Request,
 ) {
 	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		writeError(w, "Method not allowed")
-		return
-	}
 
 	rate, err := fetchRates(r.Context(), conf.From, conf.To)
 	if err != nil {
