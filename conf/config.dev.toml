@@ -1,0 +1,7 @@
+[db]
+filename = ":memory:"
+wal_mode = false
+
+[server]
+port = 8080
+bind_address = "127.0.0.1"

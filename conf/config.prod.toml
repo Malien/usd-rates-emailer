@@ -1,0 +1,7 @@
+[db]
+filename = "rates.sqlite"
+wal_mode = true
+
+[server]
+port = 80
+bind_address = "0.0.0.0"
