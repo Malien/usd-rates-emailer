@@ -1,5 +1,5 @@
 [db]
-filename = "rates.sqlite"
+filename = "./data/rates.sqlite"
 wal_mode = true
 
 [server]

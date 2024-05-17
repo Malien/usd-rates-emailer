@@ -1,0 +1,17 @@
+name: ratesmail
+
+services:
+  ratesmail:
+    build: .
+    ports:
+      - 3002:80
+    volumes:
+      - ratesmail-subscribers:/rate-emailer/data
+    environment:
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_SMTP=$EMAIL_SMTP}
+      
+volumes:
+  ratesmail-subscribers:

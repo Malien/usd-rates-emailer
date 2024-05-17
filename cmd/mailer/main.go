@@ -14,11 +14,11 @@ func main() {
 
 	mailer, err := ratesmail.NewSmtpMailer(config.Email)
 	must(err)
-    defer mailer.Close()
+	defer mailer.Close()
 
 	db, err := ratesmail.OpenDB(config.DB)
 	must(err)
-    defer db.Close()
+	defer db.Close()
 
 	err = ratesmail.PublishMailingList(ratesmail.PublishMailingListOpts{
 		DB:                 db,
