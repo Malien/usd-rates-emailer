@@ -19,7 +19,7 @@ func main() {
 	must(err)
 	defer db.Close()
 
-	err = ratesmail.Bootstrap(ratesmail.BootstrapOptions{
+	err = ratesmail.RunServer(ratesmail.RunServerOptions{
 		DB:                 db,
 		RateFetcher:        ratesmail.FetchExchangeRateAPIOpenRates,
 		Config:             config.Server,
